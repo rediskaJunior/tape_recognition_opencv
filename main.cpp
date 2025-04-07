@@ -34,7 +34,7 @@ int main(){
 //    while(cap.read(frame)){
 
 //trying to understand how to work with it
-    cv::Mat img = cv::imread("test.jpg", cv::IMREAD_GRAYSCALE);
+    cv::Mat img = cv::imread("test2.jpg", cv::IMREAD_GRAYSCALE);
     if (img.empty()) {
         std::cerr << "Image not found" << std::endl;
         return -1;
@@ -42,7 +42,7 @@ int main(){
 
     //inverted threshold: dark areas become white (foreground)
     cv::Mat binary;
-    cv::threshold(img, binary, 100, 255, cv::THRESH_BINARY_INV); // adjust 100 if needed
+    cv::threshold(img, binary, 200, 255, cv::THRESH_BINARY_INV);
 
     //morphology to clean up small noise (if dots are noisy or broken)
     cv::Mat cleaned;
