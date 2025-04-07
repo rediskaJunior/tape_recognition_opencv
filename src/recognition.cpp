@@ -3,3 +3,7 @@
 //
 
 #include "../includes/recognition.hpp"
+
+int recognize_tape(){
+    return 0;
+}
