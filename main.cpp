@@ -1,8 +1,27 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <iostream>
+#include <thread>
+#include <atomic>
 
 #include "recognition.hpp" //there will be algorithm with recognition
+
+std::atomic<bool> keyPressed(true);
+std::atomic<bool> workIsDone(false);
+
+void waitForDone() {
+    std::string input;
+    while (true) {
+        std::getline(std::cin, input);
+        if (input == "Done" || input == "done" || input == "d") {
+            keyPressed = true;
+        } else if (input == "End" || input == "end" || input == "e"){
+            workIsDone = true;
+            keyPressed = true;
+        }
+    }
+}
+
 
 void printCoordinates(const cv::Mat& binaryMask) {
     std::vector<std::vector<cv::Point>> contours;
@@ -26,47 +45,80 @@ void printCoordinates(const cv::Mat& binaryMask) {
     }
 }
 
-int main(){
+int main() {
+    std::thread inputThread(waitForDone); //background thread for terminal input
+    inputThread.detach();
 
-    //save for later
-//    cv::VideoCapture cap(0); //for now its web of the laptop
-//    cv::Mat frame;
-//    while(cap.read(frame)){
+    std::cout << "Start of the work. Initializing the camera" << std::endl;
 
-//trying to understand how to work with it
-    cv::Mat img = cv::imread("test2.jpg", cv::IMREAD_GRAYSCALE);
-    if (img.empty()) {
-        std::cerr << "Image not found" << std::endl;
-        return -1;
+    while (!workIsDone) {
+        if (keyPressed) {
+            keyPressed = false;
+            cv::VideoCapture cap(0);
+            if (!cap.isOpened()) {
+                std::cerr << "Error: Could not open camera." << std::endl;
+                return -1;
+            }
+
+            // Wait a moment for camera to initialize
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+            // Capture frame
+            cv::Mat frame;
+            bool success = cap.read(frame);
+            if (!success) {
+                std::cerr << "Error: Could not read from camera." << std::endl;
+                return -1;
+            }
+
+            // Save the image properly
+            bool saved = cv::imwrite("img.jpg", frame);
+            if (!saved) {
+                std::cerr << "Error: Could not save image." << std::endl;
+                return -1;
+            }
+
+            std::cout << "Image captured and saved successfully." << std::endl;
+            cap.release();
+
+            cv::Mat gray;
+            cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+
+            //inverted threshold: dark areas become white (foreground)
+            cv::Mat binary;
+            cv::threshold(gray, binary, 200, 255, cv::THRESH_BINARY_INV);
+
+            //morphology to clean up small noise (if dots are noisy or broken)
+            cv::Mat cleaned;
+            cv::morphologyEx(binary, cleaned, cv::MORPH_OPEN,
+                             cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+
+            printCoordinates(cleaned);
+            //apply mask to original image
+            cv::Mat result;
+            frame.copyTo(result, cleaned);
+            //from 0 to 10 -- our dots on the tape
+
+
+            cv::imwrite("dots_mask.png", cleaned);
+            cv::imwrite("dots_only.png", result);
+
+//            cv::imshow("Binary Inverted", binary);
+//            cv::waitKey(0);
+//            cv::imshow("Cleaned Mask", cleaned);
+//            cv::waitKey(0);
+//            cv::imshow("Final Result", result);
+//            cv::waitKey(0);
+//            cv::destroyAllWindows();
+            cap.release();
+        }
+        std::cout << "Change photo" << std::endl;
+        std::cout << "Type 'Done' to continue the work" << std::endl;
+        keyPressed = false;
+        while (!keyPressed) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
     }
-
-    //inverted threshold: dark areas become white (foreground)
-    cv::Mat binary;
-    cv::threshold(img, binary, 200, 255, cv::THRESH_BINARY_INV);
-
-    //morphology to clean up small noise (if dots are noisy or broken)
-    cv::Mat cleaned;
-    cv::morphologyEx(binary, cleaned, cv::MORPH_OPEN,
-                     cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
-
-    printCoordinates(cleaned);
-    //apply mask to original image
-    cv::Mat result;
-    img.copyTo(result, cleaned);
-    //from 0 to 10 -- our dots on the tape
-
-
-    cv::imwrite("dots_mask.png", cleaned);
-    cv::imwrite("dots_only.png", result);
-
-    cv::imshow("Binary Inverted", binary);
-    cv::waitKey(0);
-    cv::imshow("Cleaned Mask", cleaned);
-    cv::waitKey(0);
-    cv::imshow("Final Result", result);
-    cv::waitKey(0);
-
-//    cap.release();
-
+    std::cout << "Program ended" << std::endl;
     return 0;
 }
