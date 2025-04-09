@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
 #! Check every comment after the "#!"
-
 #! CHANGE YOUR PROJECT NAME
 #  It is used as your project's main executable name.
 set(PROJECT_NAME tape_recognition)
@@ -9,13 +8,20 @@ project(${PROJECT_NAME} C CXX) # project(${PROJECT_NAME} C CXX ASM)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_compile_options(-mavx2)
+# Add compile options for Windows. These are AVX2 related.
+if(MSVC)
+    # MSVC-specific compiler options (if using Microsoft Visual Studio)
+    add_compile_options(/arch:AVX2)
+else()
+    # For other compilers (e.g., MinGW, Clang, etc.)
+    add_compile_options(-mavx2)
+endif()
 
 ##########################################################
 # User configurable options of the template
 ##########################################################
 # Note: symbols like WARNINGS_AS_ERRORS in configuration are intentionally variables
-# and not CMake options --using options creates too many problems for students.
+# and not CMake options -- using options creates too many problems for students.
 
 #! It is a good practice to set "WARNINGS_AS_ERRORS" ON,
 #  but sometimes it creates too much trouble, so default is OFF.
@@ -68,9 +74,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE includes src)
 #target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIR})
 #target_link_libraries(${PROJECT_NAME} Boost::program_options Boost::system)
 
-find_package(OpenCV REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+# On Windows, ensure OpenCV is correctly found
+find_package(OpenCV REQUIRED PATHS C:/Users/katja/Downloads/opencv/build/x64/vc16/lib)
+if(OpenCV_FOUND)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+else()
+    message(FATAL_ERROR "OpenCV not found on your system!")
+endif()
 
 ##########################################################
 # Fixed CMakeLists.txt part
@@ -85,3 +96,4 @@ set(ALL_TARGETS ${PROJECT_NAME})
 
 # Include CMake setup
 include(cmake/main-config.cmake)
+set(EXECUTABLE_PATH ${CMAKE_BINARY_DIR}/Release/${PROJECT_NAME}.exe)
