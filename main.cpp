@@ -69,7 +69,9 @@ int main() {
             cv::Mat gray;
             cv::cvtColor(photo, gray, cv::COLOR_BGR2GRAY);
 
-            printCoordinatesHough(gray); //Call function with algorithm
+            RecognitionAlgorithm Alg;
+
+            Alg.printCoordinatesHough(gray); //Call function with algorithm
 
             cap.release();
         }

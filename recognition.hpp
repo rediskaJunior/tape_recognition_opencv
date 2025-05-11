@@ -5,7 +5,9 @@
 #ifndef RECOGNITION_HPP
 #define RECOGNITION_HPP
 
-void analyzeCirclePattern(const std::vector<cv::Vec3f>& circles, const cv::Mat& image) {
+class RecognitionAlgorithm {
+public:
+    void analyzeCirclePattern(const std::vector<cv::Vec3f>& circles, const cv::Mat& image) {
     if (circles.empty()) {
         std::cout << "No circles detected to analyze." << std::endl;
         return;
@@ -339,5 +341,6 @@ void printCoordinatesHough(const cv::Mat& grayImage){
     cv::waitKey(0);
     cv::destroyAllWindows();
 }
+};
 
 #endif //RECOGNITION_HPP
