@@ -24,42 +24,34 @@ void waitForDone() {
 }
 
 void printCoordinatesHough(const cv::Mat& grayImage) {
-    // Create a copy of the image to avoid modifying the original
-    cv::Mat workingImage = grayImage.clone();
+    cv::Mat workingImage = grayImage.clone(); // Create a copy of the image to avoid modifying the original
 
-    // For black dots on white background, invert the image
-    cv::bitwise_not(workingImage, workingImage);
+    cv::bitwise_not(workingImage, workingImage);// For black dots on white background, invert the image
 
-    // Apply blur to reduce noise
-    cv::Mat blurred;
+    cv::Mat blurred;// Apply blur to reduce noise
     cv::GaussianBlur(workingImage, blurred, cv::Size(5, 5), 1.5);
 
-    // Apply adaptive thresholding to handle uneven lighting
-    cv::Mat binary;
+    cv::Mat binary;     // Apply adaptive thresholding to handle uneven lighting
     cv::adaptiveThreshold(blurred, binary, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C,
                          cv::THRESH_BINARY, 11, 2);
 
-    // Clean up using morphological operations
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));     // Clean up using morphological operations
     cv::morphologyEx(binary, binary, cv::MORPH_OPEN, kernel);
 
-    // For visualization
     cv::Mat visualImage = grayImage.clone();
     cv::cvtColor(visualImage, visualImage, cv::COLOR_GRAY2BGR);
 
-    // Detect circles using HoughCircles
     std::vector<cv::Vec3f> circles;
     cv::HoughCircles(binary, circles, cv::HOUGH_GRADIENT, 1,
-                     10,  // min distance between circles (reduced)
+                     8,  // min distance between circles (reduced)
                      50,  // param1: higher threshold for Canny edge detector (reduced)
                      10,  // param2: accumulator threshold (reduced significantly)
-                     1,   // min radius (reduced for small dots)
+                     0.9,   // min radius (reduced for small dots)
                      10   // max radius (reduced)
     );
 
     std::cout << "Found " << circles.size() << " circles on the photo:" << std::endl;
 
-    // Draw and print circle information
     for (size_t i = 0; i < circles.size(); i++) {
         int cx = static_cast<int>(circles[i][0]);
         int cy = static_cast<int>(circles[i][1]);
@@ -67,13 +59,10 @@ void printCoordinatesHough(const cv::Mat& grayImage) {
 
         std::cout << "Circle " << i + 1 << ": (" << cy << ", " << cx << "), Radius: " << radius << std::endl;
 
-        // Draw the circle center
         cv::circle(visualImage, cv::Point(cx, cy), 2, cv::Scalar(0, 255, 0), -1);
-        // Draw the circle outline
         cv::circle(visualImage, cv::Point(cx, cy), radius, cv::Scalar(0, 0, 255), 1);
     }
 
-    // Display processing steps for debugging
     cv::imshow("Original Grayscale", grayImage);
     cv::imshow("Inverted", workingImage);
     cv::imshow("Binary", binary);
