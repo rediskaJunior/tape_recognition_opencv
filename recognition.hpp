@@ -4,8 +4,9 @@
 
 #ifndef RECOGNITION_HPP
 #define RECOGNITION_HPP
+#include <fstream>
 
-//Definied variables that we need in future (CHANGE ONLY IF YOU ARE AWARE OF FUNC LOGIC)
+//Defined variables that we need in future (CHANGE ONLY IF YOU ARE AWARE OF FUNC LOGIC)
 #define MINDISTBETWEENCIRCLES 10
 #define PARAM1 50
 #define PARAM2 10
@@ -243,6 +244,22 @@ public:
         }
         std::cout << std::endl;
     }
+
+    //Writing to the result file to further analysis that you might need
+    std::ofstream outputFile("result.txt", std::ios::app);
+    if (!outputFile.is_open()) {
+        std::cerr << "!!Failed to open result.txt for appending\n!!";
+        return;
+    }
+    for (size_t col = 0; col < columnCenters.size(); col++) {
+        for (size_t row = 0; row < rowCenters.size(); row++) {
+            std::string bit = (bitMatrix[row][col] ? "1 " : "0 ");
+            outputFile << bit;
+        }
+        outputFile << '\n';
+    }
+    outputFile.close();
+    std::cout << "Data was written to result.txt" << std::endl;
 
     // VI: Visualize the grid (only for comfortable debugging)
     cv::Mat gridImage = image.clone();
