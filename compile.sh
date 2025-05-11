@@ -8,8 +8,8 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-debug_build=true
-optimize_build=false
+debug_build=false
+optimize_build=true
 remove_dirs=false
 install_prefix=".."
 
@@ -26,10 +26,12 @@ while [[ $# -gt 0 ]]; do
     ;;
   -D | --debug-build)
     debug_build=true
+    optimize_build=false
     shift
     ;;
   -d | --no-debug-build)
     debug_build=false
+    optimize_build=true
     shift
     ;;
   -O | --optimize-build)

@@ -51,9 +51,9 @@ set(ENABLE_TSan OFF)
 set(ENABLE_MSAN OFF)
 
 #! Be default -- build release version if not specified otherwise.
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif ()
+#if (NOT CMAKE_BUILD_TYPE)
+#    set(CMAKE_BUILD_TYPE Release)
+#endif ()
 
 # Warnings as errors should be imported here -- do not move this line
 include(cmake/CompilerWarnings.cmake)
@@ -63,10 +63,16 @@ include(cmake/CompilerWarnings.cmake)
 ##########################################################
 
 #! Project main executable source compilation
-add_executable(${PROJECT_NAME} main.cpp src)
+add_executable(${PROJECT_NAME} main.cpp src
+        recognition.hpp)
+
+target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        $<$<CONFIG:Debug>:DEBUG=1>
+)
 
 #! Put path to your project headers
-target_include_directories(${PROJECT_NAME} PRIVATE includes src)
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 #! Add external packages
 ## options_parser requires boost::program_options library
 #find_package(Boost 1.71.0 COMPONENTS program_options system REQUIRED)
@@ -94,4 +100,4 @@ set(ALL_TARGETS ${PROJECT_NAME})
 
 # Include CMake setup
 include(cmake/main-config.cmake)
-set(EXECUTABLE_PATH ${CMAKE_BINARY_DIR}/Release/${PROJECT_NAME}.exe)
+set(EXECUTABLE_PATH $<TARGET_FILE:${PROJECT_NAME}>)
