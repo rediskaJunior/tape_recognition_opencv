@@ -23,27 +23,63 @@ void waitForDone() {
     }
 }
 
+void printCoordinatesHough(const cv::Mat& grayImage) {
+    // Create a copy of the image to avoid modifying the original
+    cv::Mat workingImage = grayImage.clone();
 
-void printCoordinates(const cv::Mat& binaryMask) {
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
+    // For black dots on white background, invert the image
+    cv::bitwise_not(workingImage, workingImage);
 
-    //find contours of the white regions (dots on the tape)
-    cv::findContours(binaryMask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    // Apply blur to reduce noise
+    cv::Mat blurred;
+    cv::GaussianBlur(workingImage, blurred, cv::Size(5, 5), 1.5);
 
-    //show num of dots
-    std::cout << "Found " << contours.size() << " dots on the photo:" << std::endl;
+    // Apply adaptive thresholding to handle uneven lighting
+    cv::Mat binary;
+    cv::adaptiveThreshold(blurred, binary, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C,
+                         cv::THRESH_BINARY, 11, 2);
 
-    for (size_t i = 0; i < contours.size(); ++i) {
-        //compute the center of the dot
-        cv::Moments m = cv::moments(contours[i]);
-        if (m.m00 > 0) {
-            //if center (num of white pixels in it) is > 0
-            int cx = static_cast<int>(m.m10 / m.m00);
-            int cy = static_cast<int>(m.m01 / m.m00);
-            std::cout << "Dot " << i + 1 << ": (" << cy << ", " << cx << ")" << std::endl;
-        }
+    // Clean up using morphological operations
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::morphologyEx(binary, binary, cv::MORPH_OPEN, kernel);
+
+    // For visualization
+    cv::Mat visualImage = grayImage.clone();
+    cv::cvtColor(visualImage, visualImage, cv::COLOR_GRAY2BGR);
+
+    // Detect circles using HoughCircles
+    std::vector<cv::Vec3f> circles;
+    cv::HoughCircles(binary, circles, cv::HOUGH_GRADIENT, 1,
+                     10,  // min distance between circles (reduced)
+                     50,  // param1: higher threshold for Canny edge detector (reduced)
+                     10,  // param2: accumulator threshold (reduced significantly)
+                     1,   // min radius (reduced for small dots)
+                     10   // max radius (reduced)
+    );
+
+    std::cout << "Found " << circles.size() << " circles on the photo:" << std::endl;
+
+    // Draw and print circle information
+    for (size_t i = 0; i < circles.size(); i++) {
+        int cx = static_cast<int>(circles[i][0]);
+        int cy = static_cast<int>(circles[i][1]);
+        int radius = static_cast<int>(circles[i][2]);
+
+        std::cout << "Circle " << i + 1 << ": (" << cy << ", " << cx << "), Radius: " << radius << std::endl;
+
+        // Draw the circle center
+        cv::circle(visualImage, cv::Point(cx, cy), 2, cv::Scalar(0, 255, 0), -1);
+        // Draw the circle outline
+        cv::circle(visualImage, cv::Point(cx, cy), radius, cv::Scalar(0, 0, 255), 1);
     }
+
+    // Display processing steps for debugging
+    cv::imshow("Original Grayscale", grayImage);
+    cv::imshow("Inverted", workingImage);
+    cv::imshow("Binary", binary);
+    cv::imshow("Detected Circles", visualImage);
+    cv::waitKey(0);
+    cv::destroyAllWindows();
 }
 
 int main() {
@@ -55,7 +91,7 @@ int main() {
     while (!workIsDone) {
         if (keyPressed) {
             keyPressed = false;
-            cv::VideoCapture cap(1);
+            cv::VideoCapture cap(4);
             if (!cap.isOpened()) {
                 std::cerr << "Error: Could not open camera." << std::endl;
                 return -1;
@@ -80,33 +116,35 @@ int main() {
 
             std::cout << "Image captured and saved successfully." << std::endl;
             cap.release();
-            
+
             cv::Mat gray;
             cv::cvtColor(photo, gray, cv::COLOR_BGR2GRAY);
 
-            cv::Mat binary;
-            cv::threshold(gray, binary, 200, 255, cv::THRESH_BINARY_INV);
-
-            //morphology to clean up small noise (if dots are noisy or broken)
-            cv::Mat cleaned;
-            cv::morphologyEx(binary, cleaned, cv::MORPH_OPEN,
-                             cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
+            // cv::Mat binary;
+            // cv::threshold(gray, binary, 200, 255, cv::THRESH_BINARY_INV);
+            //
+            // //morphology to clean up small noise (if dots are noisy or broken)
+            // cv::Mat cleaned;
+            // cv::morphologyEx(binary, cleaned, cv::MORPH_OPEN,
+            //                  cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 
             //print for further debug
-            printCoordinates(cleaned);
+            // printCoordinates(cleaned);
+            printCoordinatesHough(gray);
             //apply mask to original image (now is not working as it should)
             // cv::Mat result;
             // frame.copyTo(result, cleaned);
             //from 0 to 10 -- our dots on the tape
 
 
-            cv::imwrite("dots_mask.png", cleaned);
-            // cv::imwrite("dots_only.png", result);
 
-           cv::imshow("Binary Inverted", binary);
-           cv::waitKey(0);
-           cv::imshow("Cleaned Mask", cleaned);
-           cv::waitKey(0);
+           //  cv::imwrite("dots_mask.png", cleaned);
+           //  // cv::imwrite("dots_only.png", result);
+           //
+           // cv::imshow("Binary Inverted", binary);
+           // cv::waitKey(0);
+           // cv::imshow("Cleaned Mask", cleaned);
+           // cv::waitKey(0);
             //    cv::imshow("Final Result", result);
             //    cv::waitKey(0);
             //cv::destroyAllWindows();

@@ -67,15 +67,13 @@ add_executable(${PROJECT_NAME} main.cpp src)
 
 #! Put path to your project headers
 target_include_directories(${PROJECT_NAME} PRIVATE includes src)
-
 #! Add external packages
 ## options_parser requires boost::program_options library
 #find_package(Boost 1.71.0 COMPONENTS program_options system REQUIRED)
 #target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIR})
 #target_link_libraries(${PROJECT_NAME} Boost::program_options Boost::system)
-
 # On Windows, ensure OpenCV is correctly found
-find_package(OpenCV REQUIRED PATHS C:/Users/katja/Downloads/opencv/build/x64/vc16/lib)
+find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
     target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
