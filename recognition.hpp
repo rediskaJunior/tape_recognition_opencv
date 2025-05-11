@@ -5,6 +5,13 @@
 #ifndef RECOGNITION_HPP
 #define RECOGNITION_HPP
 
+//Definied variables that we need in future (CHANGE ONLY IF YOU ARE AWARE OF FUNC LOGIC)
+#define MINDISTBETWEENCIRCLES 10
+#define PARAM1 50
+#define PARAM2 10
+#define MINRADIUS 1
+#define MAXRADIUS 10
+
 class RecognitionAlgorithm {
 public:
     void analyzeCirclePattern(const std::vector<cv::Vec3f>& circles, const cv::Mat& image) {
@@ -311,11 +318,11 @@ void printCoordinatesHough(const cv::Mat& grayImage){
 
     std::vector<cv::Vec3f> circles;
     cv::HoughCircles(binary, circles, cv::HOUGH_GRADIENT, 1,
-                     10,  // min distance between circles
-                     50,  // param1: higher threshold for Canny edge detector
-                     10,  // param2: accumulator threshold
-                     1,   // min radius
-                     10   // max radius
+                     MINDISTBETWEENCIRCLES,
+                     PARAM1,  // higher threshold for Canny edge detector
+                     PARAM2,  // accumulator threshold
+                     MINRADIUS,
+                     MAXRADIUS
     );
 
     #ifdef DEBUG
